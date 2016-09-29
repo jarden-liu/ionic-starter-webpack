@@ -2,6 +2,9 @@ const path = require('path');
 const webpack = require('webpack');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const BowerWebpackPlugin = require('bower-webpack-plugin');
+const ExtractTextPlugin = require('extract-text-webpack-plugin');
+const LiveReloadPlugin = require('webpack-livereload-plugin');
+
 const PATHS = {
   app: path.join(__dirname, 'app'),
   build: path.join(__dirname, 'www'),
@@ -17,11 +20,11 @@ module.exports = {
     app: [
       PATHS.app
     ],
-    vendor: ['angular', 'angular-aria', 'angular-animate', 'angular-sanitize', 'angular-material', 'ngstorage', 'angular-messages', 'angular-translate', 'ionic-sdk/release/js/ionic', 'ionic-sdk/release/js/ionic-angular', 'ionic-datepicker', 'moment', 'angular-moment', 'ngCordova', 'ionic-filter-bar', 'angular-filter', 'angular-translate-loader-partial', 'angular-ui-router', 'lodash', 'angular-cache']
+    vendor: ['angular', 'ionic/release/js/ionic.js', 'ionic/release/js/ionic-angular.js', 'angular-sanitize', 'angular-animate', 'angular-ui-router', 'angular-aria', 'ngstorage', 'angular-messages', 'angular-translate', 'angular-translate-loader-partial']
   },
   output: {
     path: PATHS.build,
-    filename: '[name].js',
+    filename: '[name].[chunkhash].js',
     chunkFilename: '[chunkhash].js',
     hash: true
   },
@@ -47,17 +50,22 @@ module.exports = {
     }],
     loaders: [{
       test: /\.css$/,
-      loader: 'style!css'
+      loader: ExtractTextPlugin.extract('style-loader', 'css-loader')
     }, {
       test: /\.scss$/,
-      loader: 'style!css!sass?outputStyle=expanded'
+      loader: ExtractTextPlugin.extract('style-loader', 'css-loader!sass-loader')
     }, {
       test: /\.js$/,
       loaders: ['ng-annotate', 'babel?cacheDirectory&presets[]=react,presets[]=es2015,presets[]=stage-1'],
       include: PRIVATE_MODULES
     }, {
       test: /\.html$/,
-      loader: 'ngtemplate?relativeTo=components/!html',
+      loader: 'ngtemplate?relativeTo=components/',
+      exclude: /Lazy/,
+      include: /components/
+    }, {
+      test: /\.html$/,
+      loader: 'html',
       include: /components/
     }, {
       test: /\.woff/,
@@ -95,9 +103,10 @@ module.exports = {
     }),
     new webpack.ResolverPlugin(
       new webpack.ResolverPlugin.DirectoryDescriptionFilePlugin(
-        'package.json', ['main']
+        'package.json', true
       )
     ),
+    new LiveReloadPlugin(),
     new BowerWebpackPlugin({
       searchResolveModulesDirectories: false
     }),
@@ -110,6 +119,7 @@ module.exports = {
       template: './app/index.html',
       inject: 'body'
     }),
+    new ExtractTextPlugin('[name].[contenthash].css'),
     new webpack.NoErrorsPlugin()
   ]
 };
